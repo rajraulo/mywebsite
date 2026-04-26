@@ -1,0 +1,824 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lingaraj Rawlo — Machine Learning Universe</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:ital,wght@0,300;0,400;1,300&family=Playfair+Display:ital,wght@1,400;1,700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#050810;--surface:#0d1120;--card:#111827;--border:rgba(99,179,237,0.12);
+  --accent:#38bdf8;--accent2:#818cf8;--accent3:#34d399;--accent4:#fb923c;
+  --text:#e2e8f0;--muted:#64748b;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+body{font-family:'Syne',sans-serif;background:var(--bg);color:var(--text);overflow-x:hidden;cursor:none;}
+#cursor{width:10px;height:10px;background:var(--accent);border-radius:50%;position:fixed;pointer-events:none;z-index:9999;transform:translate(-50%,-50%);mix-blend-mode:screen;}
+#cursor-ring{width:38px;height:38px;border:1.5px solid rgba(56,189,248,0.5);border-radius:50%;position:fixed;pointer-events:none;z-index:9998;transform:translate(-50%,-50%);transition:transform 0.18s ease;}
+#bg-canvas{position:fixed;inset:0;z-index:0;opacity:0.4;}
+
+/* NAV */
+nav{position:fixed;top:0;left:0;right:0;z-index:200;display:flex;align-items:center;justify-content:space-between;padding:1.2rem 4rem;background:rgba(5,8,16,0.75);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);}
+.nav-logo{font-size:1.1rem;font-weight:800;letter-spacing:0.04em;background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;text-decoration:none;}
+.nav-links{display:flex;gap:2rem;list-style:none;align-items:center;}
+.nav-links a{font-size:0.78rem;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);text-decoration:none;transition:color 0.3s;font-family:'DM Mono',monospace;}
+.nav-links a:hover{color:var(--accent);}
+.admin-toggle{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#050810;border:none;padding:0.5rem 1.2rem;border-radius:6px;font-family:'Syne',sans-serif;font-weight:700;font-size:0.78rem;letter-spacing:0.06em;text-transform:uppercase;cursor:pointer;transition:opacity 0.2s;}
+.admin-toggle:hover{opacity:0.85;}
+
+/* HERO */
+.hero{min-height:100vh;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;position:relative;z-index:1;padding:8rem 2rem 4rem;}
+.hero-badge{display:inline-flex;align-items:center;gap:0.5rem;font-family:'DM Mono',monospace;font-size:0.72rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--accent);border:1px solid rgba(56,189,248,0.25);padding:0.4rem 1rem;border-radius:100px;margin-bottom:2rem;background:rgba(56,189,248,0.05);animation:fadeUp 0.8s ease both;}
+.hero-title{font-size:clamp(3rem,8vw,6.5rem);font-weight:800;line-height:1.0;letter-spacing:-0.03em;margin-bottom:1.5rem;animation:fadeUp 0.8s 0.15s ease both;}
+.hero-title .grad{background:linear-gradient(135deg,var(--accent) 0%,var(--accent2) 50%,var(--accent3) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+.hero-title .ital{font-family:'Playfair Display',serif;font-style:italic;color:var(--accent4);-webkit-text-fill-color:var(--accent4);}
+.hero-sub{font-size:1rem;color:var(--muted);max-width:540px;line-height:1.75;margin-bottom:3rem;animation:fadeUp 0.8s 0.3s ease both;font-family:'DM Mono',monospace;font-weight:300;}
+.hero-cta{display:flex;gap:1rem;flex-wrap:wrap;justify-content:center;animation:fadeUp 0.8s 0.45s ease both;}
+.btn-primary{display:inline-flex;align-items:center;gap:0.5rem;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#050810;padding:0.85rem 2rem;border-radius:8px;font-weight:700;font-size:0.88rem;letter-spacing:0.05em;text-decoration:none;text-transform:uppercase;transition:transform 0.2s,box-shadow 0.2s;box-shadow:0 0 30px rgba(56,189,248,0.25);}
+.btn-primary:hover{transform:translateY(-2px);box-shadow:0 0 50px rgba(56,189,248,0.4);}
+.btn-outline{display:inline-flex;align-items:center;gap:0.5rem;border:1px solid var(--border);color:var(--text);padding:0.85rem 2rem;border-radius:8px;font-weight:600;font-size:0.88rem;letter-spacing:0.05em;text-decoration:none;text-transform:uppercase;transition:all 0.2s;}
+.btn-outline:hover{border-color:var(--accent);color:var(--accent);}
+
+/* STATS */
+.stats-bar{background:var(--surface);border-top:1px solid var(--border);border-bottom:1px solid var(--border);padding:2.5rem 4rem;display:flex;justify-content:space-around;flex-wrap:wrap;gap:2rem;position:relative;z-index:1;}
+.stat{text-align:center;}
+.stat-num{font-size:2.5rem;font-weight:800;background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+.stat-label{font-family:'DM Mono',monospace;font-size:0.7rem;color:var(--muted);letter-spacing:0.1em;text-transform:uppercase;margin-top:0.35rem;}
+
+/* SECTIONS */
+section{position:relative;z-index:1;}
+.section-label{font-family:'DM Mono',monospace;font-size:0.7rem;letter-spacing:0.2em;text-transform:uppercase;color:var(--accent);margin-bottom:0.75rem;display:flex;align-items:center;gap:0.75rem;}
+.section-label::before{content:'';display:block;width:30px;height:1px;background:var(--accent);}
+.section-title{font-size:clamp(1.8rem,4vw,2.8rem);font-weight:800;line-height:1.15;letter-spacing:-0.02em;margin-bottom:1rem;}
+.section-desc{color:var(--muted);max-width:520px;line-height:1.75;font-family:'DM Mono',monospace;font-size:0.88rem;}
+
+/* CONCEPTS */
+.concepts{padding:7rem 4rem;}
+.concepts-header{margin-bottom:4rem;}
+.concepts-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:1.5rem;}
+.concept-card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:2rem;transition:transform 0.3s,border-color 0.3s,box-shadow 0.3s;position:relative;overflow:hidden;}
+.concept-card:hover{transform:translateY(-4px);border-color:rgba(56,189,248,0.3);box-shadow:0 0 40px rgba(56,189,248,0.12);}
+.card-icon{width:46px;height:46px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:1.3rem;margin-bottom:1.25rem;background:rgba(56,189,248,0.1);border:1px solid rgba(56,189,248,0.15);}
+.card-tag{font-family:'DM Mono',monospace;font-size:0.65rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--accent);margin-bottom:0.5rem;}
+.card-title{font-size:1.2rem;font-weight:700;margin-bottom:0.75rem;}
+.card-body{font-family:'DM Mono',monospace;font-size:0.82rem;color:var(--muted);line-height:1.75;}
+.card-formula{margin-top:1.25rem;background:rgba(0,0,0,0.3);border:1px solid rgba(255,255,255,0.06);border-radius:8px;padding:0.75rem 1rem;font-family:'DM Mono',monospace;font-size:0.78rem;color:var(--accent3);}
+
+/* ALGO TABLE */
+.algo-section{padding:7rem 4rem;}
+.algo-table{width:100%;border-collapse:collapse;margin-top:3rem;font-family:'DM Mono',monospace;font-size:0.82rem;}
+.algo-table th{text-align:left;padding:1rem 1.25rem;font-size:0.68rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--border);}
+.algo-table td{padding:1rem 1.25rem;border-bottom:1px solid rgba(255,255,255,0.04);vertical-align:middle;}
+.algo-table tr:hover td{background:rgba(56,189,248,0.03);}
+.algo-table td:first-child{font-weight:600;}
+.pill{display:inline-block;padding:0.2rem 0.65rem;border-radius:100px;font-size:0.68rem;font-weight:600;letter-spacing:0.08em;}
+.pill-blue{background:rgba(56,189,248,0.12);color:var(--accent);}
+.pill-purple{background:rgba(129,140,248,0.12);color:var(--accent2);}
+.pill-green{background:rgba(52,211,153,0.12);color:var(--accent3);}
+.pill-orange{background:rgba(251,146,60,0.12);color:var(--accent4);}
+
+/* TIMELINE */
+.timeline-section{padding:7rem 4rem;background:var(--surface);border-top:1px solid var(--border);}
+.timeline{position:relative;max-width:780px;margin:3rem auto 0;}
+.timeline::before{content:'';position:absolute;left:24px;top:0;bottom:0;width:1px;background:linear-gradient(to bottom,var(--accent),var(--accent2),transparent);}
+.timeline-item{display:flex;gap:2.5rem;margin-bottom:2.5rem;}
+.timeline-dot{width:48px;height:48px;border-radius:50%;flex-shrink:0;background:var(--card);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:1.1rem;z-index:1;}
+.timeline-content{padding-top:0.6rem;}
+.timeline-year{font-family:'DM Mono',monospace;font-size:0.7rem;color:var(--accent);letter-spacing:0.1em;margin-bottom:0.3rem;}
+.timeline-title{font-size:1.05rem;font-weight:700;margin-bottom:0.5rem;}
+.timeline-body{font-family:'DM Mono',monospace;font-size:0.82rem;color:var(--muted);line-height:1.7;}
+
+/* FOOTER */
+footer{background:var(--surface);border-top:1px solid var(--border);padding:4rem;display:grid;grid-template-columns:1fr 1fr 1fr;gap:3rem;position:relative;z-index:1;}
+.footer-brand p{font-family:'DM Mono',monospace;font-size:0.82rem;color:var(--muted);line-height:1.7;margin-top:1rem;}
+.footer-col h4{font-size:0.75rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--muted);margin-bottom:1rem;font-family:'DM Mono',monospace;}
+.footer-col ul{list-style:none;display:flex;flex-direction:column;gap:0.6rem;}
+.footer-col ul li{font-family:'DM Mono',monospace;font-size:0.82rem;color:var(--muted);}
+.footer-bottom{grid-column:1/-1;padding-top:2rem;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;}
+.footer-bottom p,.footer-url{font-family:'DM Mono',monospace;font-size:0.72rem;color:var(--muted);}
+.footer-url{color:var(--accent);}
+
+/* ADMIN PANEL */
+.admin-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:500;backdrop-filter:blur(4px);}
+.admin-overlay.open{display:flex;}
+.admin-panel{background:#0d1120;border-left:1px solid var(--border);width:540px;max-width:95vw;height:100vh;overflow-y:auto;margin-left:auto;display:flex;flex-direction:column;}
+.admin-header{padding:1.5rem 2rem;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:#0d1120;z-index:10;}
+.admin-header h2{font-size:1rem;font-weight:700;letter-spacing:0.05em;}
+.admin-close{background:none;border:none;color:var(--muted);font-size:1.4rem;cursor:pointer;padding:0.25rem 0.5rem;border-radius:6px;transition:color 0.2s;}
+.admin-close:hover{color:var(--text);}
+.admin-tabs{display:flex;border-bottom:1px solid var(--border);padding:0 2rem;}
+.admin-tab{font-family:'DM Mono',monospace;font-size:0.75rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);padding:0.85rem 1rem;border:none;background:none;cursor:pointer;border-bottom:2px solid transparent;transition:all 0.2s;margin-bottom:-1px;}
+.admin-tab.active{color:var(--accent);border-bottom-color:var(--accent);}
+.admin-body{padding:2rem;flex:1;}
+.admin-section{display:none;}
+.admin-section.active{display:block;}
+
+/* FORM ELEMENTS */
+.form-group{margin-bottom:1.5rem;}
+.form-label{display:block;font-family:'DM Mono',monospace;font-size:0.72rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);margin-bottom:0.5rem;}
+.form-input,.form-textarea,.form-select{width:100%;background:#050810;border:1px solid var(--border);border-radius:8px;padding:0.7rem 1rem;color:var(--text);font-family:'DM Mono',monospace;font-size:0.85rem;transition:border-color 0.2s;outline:none;}
+.form-input:focus,.form-textarea:focus,.form-select:focus{border-color:var(--accent);}
+.form-textarea{resize:vertical;min-height:80px;line-height:1.6;}
+.form-select{cursor:pointer;}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:1rem;}
+.save-btn{width:100%;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#050810;border:none;padding:0.85rem;border-radius:8px;font-family:'Syne',sans-serif;font-weight:700;font-size:0.88rem;letter-spacing:0.06em;text-transform:uppercase;cursor:pointer;transition:opacity 0.2s;margin-top:0.5rem;}
+.save-btn:hover{opacity:0.85;}
+.save-btn:active{opacity:0.7;}
+.delete-btn{background:rgba(248,113,113,0.1);color:#f87171;border:1px solid rgba(248,113,113,0.2);padding:0.45rem 1rem;border-radius:6px;font-family:'DM Mono',monospace;font-size:0.75rem;cursor:pointer;transition:all 0.2s;}
+.delete-btn:hover{background:rgba(248,113,113,0.2);}
+.add-btn{background:rgba(52,211,153,0.1);color:var(--accent3);border:1px solid rgba(52,211,153,0.2);padding:0.5rem 1rem;border-radius:6px;font-family:'DM Mono',monospace;font-size:0.75rem;cursor:pointer;transition:all 0.2s;display:flex;align-items:center;gap:0.4rem;}
+.add-btn:hover{background:rgba(52,211,153,0.2);}
+.card-list-item{background:#050810;border:1px solid var(--border);border-radius:10px;padding:1rem 1.25rem;margin-bottom:0.75rem;cursor:pointer;transition:border-color 0.2s;}
+.card-list-item:hover{border-color:rgba(56,189,248,0.25);}
+.card-list-item.selected{border-color:var(--accent);}
+.card-list-title{font-size:0.9rem;font-weight:600;margin-bottom:0.2rem;}
+.card-list-sub{font-family:'DM Mono',monospace;font-size:0.72rem;color:var(--muted);}
+.card-list-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;}
+.item-actions{display:flex;gap:0.5rem;align-items:center;}
+.toast{position:fixed;bottom:2rem;right:2rem;background:var(--accent3);color:#050810;padding:0.75rem 1.5rem;border-radius:8px;font-family:'DM Mono',monospace;font-size:0.82rem;font-weight:600;z-index:999;transform:translateY(80px);opacity:0;transition:all 0.3s;}
+.toast.show{transform:translateY(0);opacity:1;}
+.divider{height:1px;background:var(--border);margin:1.5rem 0;}
+
+@keyframes fadeUp{from{opacity:0;transform:translateY(24px);}to{opacity:1;transform:translateY(0);}}
+@keyframes pulse{0%,100%{opacity:0.4;}50%{opacity:1;}}
+.nn-node{animation:pulse 2s ease-in-out infinite;}
+.fade-in{opacity:0;transform:translateY(20px);transition:opacity 0.6s,transform 0.6s;}
+.fade-in.visible{opacity:1;transform:none;}
+
+@media(max-width:900px){
+  nav{padding:1rem 1.5rem;}.nav-links{display:none;}
+  .concepts,.algo-section,.timeline-section,.hero{padding:5rem 1.5rem 4rem;}
+  footer{grid-template-columns:1fr;padding:3rem 1.5rem;}
+  .stats-bar{padding:2rem 1.5rem;}
+}
+</style>
+</head>
+<body>
+
+<div id="cursor"></div>
+<div id="cursor-ring"></div>
+<canvas id="bg-canvas"></canvas>
+
+<!-- NAV -->
+<nav>
+  <a class="nav-logo" href="#" id="site-name-display">LINGARAJ RAWLO</a>
+  <ul class="nav-links">
+    <li><a href="#concepts">Concepts</a></li>
+    <li><a href="#algorithms">Algorithms</a></li>
+    <li><a href="#history">History</a></li>
+    <li><button class="admin-toggle" onclick="openAdmin()">✏ Edit Site</button></li>
+  </ul>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-badge" id="hero-badge-display">Machine Learning Universe</div>
+  <h1 class="hero-title">
+    <span class="grad" id="hero-line1-display">Decoding</span><br>
+    the <span class="ital" id="hero-line2-display">Intelligence</span><br>
+    <span id="hero-line3-display">of Machines</span>
+  </h1>
+  <p class="hero-sub" id="hero-sub-display">A deep dive into the algorithms, mathematics, and intuitions that power modern artificial intelligence.</p>
+  <div class="hero-cta">
+    <a href="#concepts" class="btn-primary">Explore Concepts ↓</a>
+    <a href="#algorithms" class="btn-outline">View Algorithms</a>
+  </div>
+</section>
+
+<!-- STATS -->
+<div class="stats-bar" id="stats-bar"></div>
+
+<!-- CONCEPTS -->
+<section class="concepts" id="concepts">
+  <div class="concepts-header fade-in">
+    <div class="section-label">Foundation</div>
+    <h2 class="section-title" id="concepts-title-display">Core ML Concepts</h2>
+    <p class="section-desc" id="concepts-desc-display">From fundamental theory to practical implementation — the building blocks every ML practitioner must know.</p>
+  </div>
+  <div class="concepts-grid" id="concepts-grid"></div>
+</section>
+
+<!-- ALGO TABLE -->
+<section class="algo-section" id="algorithms">
+  <div class="fade-in">
+    <div class="section-label">Reference</div>
+    <h2 class="section-title" id="algo-title-display">ML Algorithm Compendium</h2>
+    <p class="section-desc" id="algo-desc-display">A quick-reference guide to the most important algorithms, their types, and use cases.</p>
+  </div>
+  <table class="algo-table fade-in">
+    <thead><tr>
+      <th>Algorithm</th><th>Category</th><th>Type</th><th>Best For</th><th>Complexity</th>
+    </tr></thead>
+    <tbody id="algo-tbody"></tbody>
+  </table>
+</section>
+
+<!-- NEURAL NETWORK VIZ -->
+<section style="padding:6rem 4rem;background:var(--surface);border-top:1px solid var(--border);border-bottom:1px solid var(--border);">
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:5rem;align-items:center;max-width:1100px;margin:0 auto;" class="fade-in">
+    <div>
+      <div class="section-label">Architecture</div>
+      <h2 class="section-title">How Neural Networks Learn</h2>
+      <p class="section-desc">Stacked layers of neurons transform raw inputs into high-level abstractions through millions of learnable parameters.</p>
+      <ul style="list-style:none;margin-top:2rem;display:flex;flex-direction:column;gap:0.85rem;">
+        <li style="display:flex;gap:1rem;font-family:'DM Mono',monospace;font-size:0.82rem;color:var(--muted);line-height:1.6;"><span style="color:var(--accent);flex-shrink:0;">→</span>Input layer receives raw features (pixels, words, numbers)</li>
+        <li style="display:flex;gap:1rem;font-family:'DM Mono',monospace;font-size:0.82rem;color:var(--muted);line-height:1.6;"><span style="color:var(--accent);flex-shrink:0;">→</span>Hidden layers extract increasingly abstract representations</li>
+        <li style="display:flex;gap:1rem;font-family:'DM Mono',monospace;font-size:0.82rem;color:var(--muted);line-height:1.6;"><span style="color:var(--accent);flex-shrink:0;">→</span>Activation functions introduce nonlinearity for complex mappings</li>
+        <li style="display:flex;gap:1rem;font-family:'DM Mono',monospace;font-size:0.82rem;color:var(--muted);line-height:1.6;"><span style="color:var(--accent);flex-shrink:0;">→</span>Backpropagation computes gradients and updates weights iteratively</li>
+      </ul>
+    </div>
+    <div style="display:flex;align-items:center;justify-content:center;">
+      <svg viewBox="0 0 420 380" style="width:100%;max-width:400px;" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <radialGradient id="nB" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="#38bdf8" stop-opacity="0.9"/><stop offset="100%" stop-color="#0284c7" stop-opacity="0.3"/></radialGradient>
+          <radialGradient id="nP" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="#818cf8" stop-opacity="0.9"/><stop offset="100%" stop-color="#4f46e5" stop-opacity="0.3"/></radialGradient>
+          <radialGradient id="nG" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="#34d399" stop-opacity="0.9"/><stop offset="100%" stop-color="#059669" stop-opacity="0.3"/></radialGradient>
+          <filter id="gl"><feGaussianBlur stdDeviation="3" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+        </defs>
+        <text x="60" y="25" fill="#64748b" font-family="DM Mono,monospace" font-size="9" text-anchor="middle" letter-spacing="1">INPUT</text>
+        <text x="180" y="25" fill="#64748b" font-family="DM Mono,monospace" font-size="9" text-anchor="middle" letter-spacing="1">HIDDEN 1</text>
+        <text x="300" y="25" fill="#64748b" font-family="DM Mono,monospace" font-size="9" text-anchor="middle" letter-spacing="1">HIDDEN 2</text>
+        <text x="390" y="25" fill="#64748b" font-family="DM Mono,monospace" font-size="9" text-anchor="middle" letter-spacing="1">OUTPUT</text>
+        <g stroke="rgba(56,189,248,0.08)" stroke-width="1">
+          <line x1="60" y1="70" x2="180" y2="90"/><line x1="60" y1="70" x2="180" y2="150"/><line x1="60" y1="70" x2="180" y2="210"/><line x1="60" y1="70" x2="180" y2="270"/>
+          <line x1="60" y1="150" x2="180" y2="90"/><line x1="60" y1="150" x2="180" y2="150"/><line x1="60" y1="150" x2="180" y2="210"/><line x1="60" y1="150" x2="180" y2="270"/>
+          <line x1="60" y1="230" x2="180" y2="90"/><line x1="60" y1="230" x2="180" y2="150"/><line x1="60" y1="230" x2="180" y2="210"/><line x1="60" y1="230" x2="180" y2="270"/>
+          <line x1="60" y1="310" x2="180" y2="90"/><line x1="60" y1="310" x2="180" y2="150"/><line x1="60" y1="310" x2="180" y2="210"/><line x1="60" y1="310" x2="180" y2="270"/>
+        </g>
+        <g stroke="rgba(129,140,248,0.08)" stroke-width="1">
+          <line x1="180" y1="90" x2="300" y2="120"/><line x1="180" y1="90" x2="300" y2="190"/><line x1="180" y1="90" x2="300" y2="260"/>
+          <line x1="180" y1="150" x2="300" y2="120"/><line x1="180" y1="150" x2="300" y2="190"/><line x1="180" y1="150" x2="300" y2="260"/>
+          <line x1="180" y1="210" x2="300" y2="120"/><line x1="180" y1="210" x2="300" y2="190"/><line x1="180" y1="210" x2="300" y2="260"/>
+          <line x1="180" y1="270" x2="300" y2="120"/><line x1="180" y1="270" x2="300" y2="190"/><line x1="180" y1="270" x2="300" y2="260"/>
+        </g>
+        <g stroke="rgba(52,211,153,0.12)" stroke-width="1">
+          <line x1="300" y1="120" x2="390" y2="155"/><line x1="300" y1="120" x2="390" y2="235"/>
+          <line x1="300" y1="190" x2="390" y2="155"/><line x1="300" y1="190" x2="390" y2="235"/>
+          <line x1="300" y1="260" x2="390" y2="155"/><line x1="300" y1="260" x2="390" y2="235"/>
+        </g>
+        <g class="nn-node" filter="url(#gl)">
+          <circle cx="60" cy="70" r="13" fill="url(#nB)" stroke="rgba(56,189,248,0.4)" stroke-width="1.5"/>
+          <circle cx="60" cy="150" r="13" fill="url(#nB)" stroke="rgba(56,189,248,0.4)" stroke-width="1.5"/>
+          <circle cx="60" cy="230" r="13" fill="url(#nB)" stroke="rgba(56,189,248,0.4)" stroke-width="1.5"/>
+          <circle cx="60" cy="310" r="13" fill="url(#nB)" stroke="rgba(56,189,248,0.4)" stroke-width="1.5"/>
+        </g>
+        <g class="nn-node" filter="url(#gl)" style="animation-delay:0.3s">
+          <circle cx="180" cy="90" r="13" fill="url(#nP)" stroke="rgba(129,140,248,0.4)" stroke-width="1.5"/>
+          <circle cx="180" cy="150" r="13" fill="url(#nP)" stroke="rgba(129,140,248,0.4)" stroke-width="1.5"/>
+          <circle cx="180" cy="210" r="13" fill="url(#nP)" stroke="rgba(129,140,248,0.4)" stroke-width="1.5"/>
+          <circle cx="180" cy="270" r="13" fill="url(#nP)" stroke="rgba(129,140,248,0.4)" stroke-width="1.5"/>
+        </g>
+        <g class="nn-node" filter="url(#gl)" style="animation-delay:0.6s">
+          <circle cx="300" cy="120" r="13" fill="url(#nP)" stroke="rgba(129,140,248,0.4)" stroke-width="1.5"/>
+          <circle cx="300" cy="190" r="13" fill="url(#nP)" stroke="rgba(129,140,248,0.4)" stroke-width="1.5"/>
+          <circle cx="300" cy="260" r="13" fill="url(#nP)" stroke="rgba(129,140,248,0.4)" stroke-width="1.5"/>
+        </g>
+        <g class="nn-node" filter="url(#gl)" style="animation-delay:0.9s">
+          <circle cx="390" cy="155" r="15" fill="url(#nG)" stroke="rgba(52,211,153,0.5)" stroke-width="2"/>
+          <circle cx="390" cy="235" r="15" fill="url(#nG)" stroke="rgba(52,211,153,0.5)" stroke-width="2"/>
+        </g>
+      </svg>
+    </div>
+  </div>
+</section>
+
+<!-- TIMELINE -->
+<section class="timeline-section" id="history">
+  <div class="fade-in" style="max-width:780px;margin:0 auto;">
+    <div class="section-label">Timeline</div>
+    <h2 class="section-title" id="timeline-title-display">70 Years of Machine Learning</h2>
+    <p class="section-desc" id="timeline-desc-display">The milestones that shaped the field — from the Perceptron to the era of large language models.</p>
+  </div>
+  <div class="timeline" id="timeline-list"></div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-brand">
+    <a class="nav-logo" href="#">LINGARAJ RAWLO</a>
+    <p id="footer-about-display">A curated portal into the world of machine learning — built for curiosity, powered by mathematics.</p>
+  </div>
+  <div class="footer-col">
+    <h4>Topics</h4>
+    <ul id="footer-topics-display"></ul>
+  </div>
+  <div class="footer-col">
+    <h4>Resources</h4>
+    <ul>
+      <li>Concept Cards</li><li>Algorithm Guide</li><li>ML Timeline</li>
+    </ul>
+  </div>
+  <div class="footer-bottom">
+    <p>© <span id="footer-year"></span> <span id="footer-name-display">Lingaraj Rawlo</span>. All rights reserved.</p>
+    <span class="footer-url" id="footer-url-display">www.lingarajrawlo.com</span>
+  </div>
+</footer>
+
+<!-- ADMIN PANEL -->
+<div class="admin-overlay" id="admin-overlay" onclick="closeAdminOnBg(event)">
+  <div class="admin-panel">
+    <div class="admin-header">
+      <h2>✏ Site Editor</h2>
+      <button class="admin-close" onclick="closeAdmin()">✕</button>
+    </div>
+    <div class="admin-tabs">
+      <button class="admin-tab active" onclick="switchTab('general')">General</button>
+      <button class="admin-tab" onclick="switchTab('concepts')">Concepts</button>
+      <button class="admin-tab" onclick="switchTab('algorithms')">Algorithms</button>
+      <button class="admin-tab" onclick="switchTab('timeline')">Timeline</button>
+    </div>
+    <div class="admin-body">
+
+      <!-- GENERAL TAB -->
+      <div class="admin-section active" id="tab-general">
+        <div class="form-group">
+          <label class="form-label">Site Name</label>
+          <input class="form-input" id="a-site-name" placeholder="LINGARAJ RAWLO">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Website URL</label>
+          <input class="form-input" id="a-site-url" placeholder="www.lingarajrawlo.com">
+        </div>
+        <div class="divider"></div>
+        <p class="form-label" style="margin-bottom:1rem;">Hero Section</p>
+        <div class="form-group">
+          <label class="form-label">Badge Text</label>
+          <input class="form-input" id="a-hero-badge" placeholder="Machine Learning Universe">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Title Line 1 (gradient)</label>
+          <input class="form-input" id="a-hero-l1" placeholder="Decoding">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Title Line 2 (italic)</label>
+          <input class="form-input" id="a-hero-l2" placeholder="Intelligence">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Title Line 3</label>
+          <input class="form-input" id="a-hero-l3" placeholder="of Machines">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Hero Subtitle</label>
+          <textarea class="form-textarea" id="a-hero-sub"></textarea>
+        </div>
+        <div class="divider"></div>
+        <p class="form-label" style="margin-bottom:1rem;">Stats Bar</p>
+        <div id="stats-editor"></div>
+        <div class="divider"></div>
+        <p class="form-label" style="margin-bottom:1rem;">Footer</p>
+        <div class="form-group">
+          <label class="form-label">About Text</label>
+          <textarea class="form-textarea" id="a-footer-about"></textarea>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Footer Topics (one per line)</label>
+          <textarea class="form-textarea" id="a-footer-topics" style="min-height:100px;"></textarea>
+        </div>
+        <button class="save-btn" onclick="saveGeneral()">Save General Settings</button>
+      </div>
+
+      <!-- CONCEPTS TAB -->
+      <div class="admin-section" id="tab-concepts">
+        <div class="form-group">
+          <label class="form-label">Section Title</label>
+          <input class="form-input" id="a-concepts-title">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Section Description</label>
+          <textarea class="form-textarea" id="a-concepts-desc"></textarea>
+        </div>
+        <div class="divider"></div>
+        <div class="card-list-header">
+          <span class="form-label" style="margin:0;">Concept Cards</span>
+          <button class="add-btn" onclick="addConcept()">+ Add Card</button>
+        </div>
+        <div id="concept-list"></div>
+        <div id="concept-editor" style="display:none;background:#050810;border:1px solid var(--border);border-radius:10px;padding:1.5rem;margin-top:1rem;">
+          <div class="form-group"><label class="form-label">Icon (emoji)</label><input class="form-input" id="ce-icon" maxlength="4" style="width:80px;text-align:center;font-size:1.3rem;"></div>
+          <div class="form-group"><label class="form-label">Tag Label</label><input class="form-input" id="ce-tag"></div>
+          <div class="form-group"><label class="form-label">Card Title</label><input class="form-input" id="ce-title"></div>
+          <div class="form-group"><label class="form-label">Description</label><textarea class="form-textarea" id="ce-body"></textarea></div>
+          <div class="form-group"><label class="form-label">Formula (optional)</label><input class="form-input" id="ce-formula" placeholder="e.g. Loss = (1/n) Σ (y_i − ŷ_i)²"></div>
+          <div style="display:flex;gap:0.75rem;">
+            <button class="save-btn" style="margin:0;" onclick="saveConcept()">Save Card</button>
+            <button class="delete-btn" onclick="deleteConcept()">Delete</button>
+          </div>
+        </div>
+        <button class="save-btn" style="margin-top:1.5rem;" onclick="saveSectionMeta('concepts')">Save Section Header</button>
+      </div>
+
+      <!-- ALGORITHMS TAB -->
+      <div class="admin-section" id="tab-algorithms">
+        <div class="form-group">
+          <label class="form-label">Section Title</label>
+          <input class="form-input" id="a-algo-title">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Section Description</label>
+          <textarea class="form-textarea" id="a-algo-desc"></textarea>
+        </div>
+        <div class="divider"></div>
+        <div class="card-list-header">
+          <span class="form-label" style="margin:0;">Algorithm Rows</span>
+          <button class="add-btn" onclick="addAlgo()">+ Add Row</button>
+        </div>
+        <div id="algo-list"></div>
+        <div id="algo-editor" style="display:none;background:#050810;border:1px solid var(--border);border-radius:10px;padding:1.5rem;margin-top:1rem;">
+          <div class="form-group"><label class="form-label">Algorithm Name</label><input class="form-input" id="ae-name"></div>
+          <div class="form-row">
+            <div class="form-group"><label class="form-label">Category</label><input class="form-input" id="ae-cat"></div>
+            <div class="form-group">
+              <label class="form-label">Badge Color</label>
+              <select class="form-select" id="ae-color">
+                <option value="blue">Blue (Regression)</option>
+                <option value="purple">Purple (Classification)</option>
+                <option value="green">Green (Clustering)</option>
+                <option value="orange">Orange (Mixed)</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group"><label class="form-label">Type</label><input class="form-input" id="ae-type"></div>
+          <div class="form-group"><label class="form-label">Best For</label><input class="form-input" id="ae-use"></div>
+          <div class="form-group"><label class="form-label">Complexity</label><input class="form-input" id="ae-complexity" placeholder="O(n·d)"></div>
+          <div style="display:flex;gap:0.75rem;">
+            <button class="save-btn" style="margin:0;" onclick="saveAlgo()">Save Row</button>
+            <button class="delete-btn" onclick="deleteAlgo()">Delete</button>
+          </div>
+        </div>
+        <button class="save-btn" style="margin-top:1.5rem;" onclick="saveSectionMeta('algo')">Save Section Header</button>
+      </div>
+
+      <!-- TIMELINE TAB -->
+      <div class="admin-section" id="tab-timeline">
+        <div class="form-group">
+          <label class="form-label">Section Title</label>
+          <input class="form-input" id="a-timeline-title">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Section Description</label>
+          <textarea class="form-textarea" id="a-timeline-desc"></textarea>
+        </div>
+        <div class="divider"></div>
+        <div class="card-list-header">
+          <span class="form-label" style="margin:0;">Timeline Events</span>
+          <button class="add-btn" onclick="addTimeline()">+ Add Event</button>
+        </div>
+        <div id="timeline-editor-list"></div>
+        <div id="timeline-editor" style="display:none;background:#050810;border:1px solid var(--border);border-radius:10px;padding:1.5rem;margin-top:1rem;">
+          <div class="form-row">
+            <div class="form-group"><label class="form-label">Year / Period</label><input class="form-input" id="te-year" placeholder="2024"></div>
+            <div class="form-group"><label class="form-label">Icon (emoji)</label><input class="form-input" id="te-icon" maxlength="4" style="text-align:center;font-size:1.2rem;"></div>
+          </div>
+          <div class="form-group"><label class="form-label">Event Title</label><input class="form-input" id="te-title"></div>
+          <div class="form-group"><label class="form-label">Description</label><textarea class="form-textarea" id="te-body"></textarea></div>
+          <div style="display:flex;gap:0.75rem;">
+            <button class="save-btn" style="margin:0;" onclick="saveTimeline()">Save Event</button>
+            <button class="delete-btn" onclick="deleteTimeline()">Delete</button>
+          </div>
+        </div>
+        <button class="save-btn" style="margin-top:1.5rem;" onclick="saveSectionMeta('timeline')">Save Section Header</button>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast">Saved successfully!</div>
+
+<script>
+// ─── DEFAULT DATA ───────────────────────────────────────────────────────────
+const DEFAULTS = {
+  siteName:'LINGARAJ RAWLO',siteUrl:'www.lingarajrawlo.com',
+  heroBadge:'Machine Learning Universe',
+  heroL1:'Decoding',heroL2:'Intelligence',heroL3:'of Machines',
+  heroSub:'A deep dive into the algorithms, mathematics, and intuitions that power modern artificial intelligence.',
+  stats:[{num:'8+',label:'Core Concepts'},{num:'20+',label:'Algorithms Covered'},{num:'70y',label:'ML History'},{num:'∞',label:'Applications'}],
+  footerAbout:'A curated portal into the world of machine learning — built for curiosity, powered by mathematics.',
+  footerTopics:['Supervised Learning','Deep Learning','Reinforcement Learning','Natural Language Processing','Computer Vision'],
+  conceptsTitle:'Core ML Concepts',conceptsDesc:'From fundamental theory to practical implementation — the building blocks every ML practitioner must know.',
+  algoTitle:'ML Algorithm Compendium',algoDesc:'A quick-reference guide to the most important algorithms, their types, and use cases.',
+  timelineTitle:'70 Years of Machine Learning',timelineDesc:'The milestones that shaped the field — from the Perceptron to the era of large language models.',
+  concepts:[
+    {icon:'🧠',tag:'Concept 01',title:'Supervised Learning',body:'The model learns from labeled training data by mapping inputs to outputs. A function f(x) → y is learned by minimizing prediction error across known examples.',formula:'Loss = (1/n) Σ (y_i − ŷ_i)²'},
+    {icon:'🔮',tag:'Concept 02',title:'Unsupervised Learning',body:'Discovers hidden patterns in unlabeled data. The model finds structure autonomously — clustering similar examples or reducing dimensionality without guidance.',formula:'Cluster: argmin Σ ||x_i − μ_k||²'},
+    {icon:'🎮',tag:'Concept 03',title:'Reinforcement Learning',body:'An agent learns to act in an environment to maximize cumulative reward through trial and error — the foundation of game-playing AIs and robotics.',formula:'Q(s,a) ← r + γ · max Q(s\',a\')'},
+    {icon:'📉',tag:'Concept 04',title:'Gradient Descent',body:'The optimization algorithm at the heart of ML. Parameters are updated iteratively by stepping in the direction of the steepest loss reduction.',formula:'θ ← θ − α · ∇L(θ)'},
+    {icon:'⚖️',tag:'Concept 05',title:'Bias–Variance Tradeoff',body:'Every model faces a fundamental tension: high bias underfits (too simple), high variance overfits (too complex). Finding the sweet spot is the core challenge.',formula:'Error = Bias² + Variance + Noise'},
+    {icon:'🌐',tag:'Concept 06',title:'Neural Networks',body:'Layers of interconnected nodes inspired by the brain. Each neuron applies a weighted sum and a nonlinear activation, enabling deep feature representation.',formula:'a = σ(Wx + b)'},
+    {icon:'🔀',tag:'Concept 07',title:'Cross-Validation',body:'A robust evaluation strategy where data is split into k folds — training on k-1, testing on the remaining one, cycling through all folds to estimate generalization.',formula:'CV Score = (1/k) Σ Score(fold_i)'},
+    {icon:'🔢',tag:'Concept 08',title:'Feature Engineering',body:'The art of transforming raw data into meaningful representations. Normalization, encoding, and interaction terms can dramatically boost model performance.',formula:'x_norm = (x − μ) / σ'}
+  ],
+  algorithms:[
+    {name:'Linear Regression',cat:'Regression',color:'blue',type:'Supervised',use:'Continuous target prediction',complexity:'O(n·d)'},
+    {name:'Logistic Regression',cat:'Classification',color:'purple',type:'Supervised',use:'Binary classification, probabilities',complexity:'O(n·d)'},
+    {name:'Decision Trees',cat:'Both',color:'orange',type:'Supervised',use:'Interpretable rules, tabular data',complexity:'O(n·d·log n)'},
+    {name:'Random Forest',cat:'Both',color:'orange',type:'Supervised',use:'Robust predictions, feature importance',complexity:'O(k·n·d·log n)'},
+    {name:'Support Vector Machine',cat:'Classification',color:'purple',type:'Supervised',use:'High-dimensional, small datasets',complexity:'O(n²–n³)'},
+    {name:'K-Means Clustering',cat:'Clustering',color:'green',type:'Unsupervised',use:'Grouping similar data points',complexity:'O(k·n·d·i)'},
+    {name:'Principal Component Analysis',cat:'Dimensionality',color:'blue',type:'Unsupervised',use:'Compression, visualization',complexity:'O(n·d²)'},
+    {name:'Gradient Boosting (XGBoost)',cat:'Both',color:'orange',type:'Supervised',use:'Competition-grade tabular ML',complexity:'O(k·n·d·log n)'},
+    {name:'Convolutional Neural Net',cat:'Classification',color:'purple',type:'Supervised (DL)',use:'Image recognition, spatial data',complexity:'O(layers·params)'},
+    {name:'Transformer',cat:'Attention',color:'purple',type:'Supervised (DL)',use:'NLP, vision, multimodal tasks',complexity:'O(n²·d)'}
+  ],
+  timeline:[
+    {year:'1950',icon:'🧮',title:'Turing Test Proposed',body:"Alan Turing introduced the concept of machine intelligence in 'Computing Machinery and Intelligence,' proposing a test for evaluating a machine's ability to exhibit human-like behavior."},
+    {year:'1958',icon:'⚡',title:'The Perceptron',body:"Frank Rosenblatt's Perceptron became the first trainable neural network, capable of learning simple binary classifications — igniting decades of neural network research."},
+    {year:'1986',icon:'📊',title:'Backpropagation Popularized',body:'Rumelhart, Hinton & Williams published the landmark backpropagation paper, enabling efficient training of multi-layer networks and reviving interest in neural networks.'},
+    {year:'1997',icon:'🤖',title:'Deep Blue Defeats Kasparov',body:"IBM's Deep Blue defeated world chess champion Garry Kasparov, demonstrating that computers could surpass humans in complex strategic reasoning."},
+    {year:'2012',icon:'🌊',title:'Deep Learning Revolution',body:'AlexNet dramatically cut ImageNet error rates using deep convolutional networks and GPUs, launching the modern deep learning era and transforming computer vision.'},
+    {year:'2017',icon:'✨',title:'Attention Is All You Need',body:"Google's Transformer architecture replaced recurrent networks with self-attention mechanisms, becoming the foundation of BERT, GPT, and every modern language model."},
+    {year:'2022–Now',icon:'🚀',title:'Era of Large Language Models',body:'ChatGPT, Gemini, Claude, and multimodal models bring AI to hundreds of millions of people, while research pushes the frontier of reasoning and agentic systems.'}
+  ]
+};
+
+// ─── STATE ───────────────────────────────────────────────────────────────────
+let D = JSON.parse(localStorage.getItem('lr_data') || 'null') || JSON.parse(JSON.stringify(DEFAULTS));
+let selectedConcept = -1, selectedAlgo = -1, selectedTimeline = -1;
+
+function save() { localStorage.setItem('lr_data',JSON.stringify(D)); }
+function showToast(msg){const t=document.getElementById('toast');t.textContent=msg||'Saved!';t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500);}
+
+// ─── RENDER ───────────────────────────────────────────────────────────────────
+function render() {
+  document.getElementById('site-name-display').textContent = D.siteName;
+  document.getElementById('hero-badge-display').textContent = D.heroBadge;
+  document.getElementById('hero-line1-display').textContent = D.heroL1;
+  document.getElementById('hero-line2-display').textContent = D.heroL2;
+  document.getElementById('hero-line3-display').textContent = D.heroL3;
+  document.getElementById('hero-sub-display').textContent = D.heroSub;
+  document.getElementById('concepts-title-display').textContent = D.conceptsTitle;
+  document.getElementById('concepts-desc-display').textContent = D.conceptsDesc;
+  document.getElementById('algo-title-display').textContent = D.algoTitle;
+  document.getElementById('algo-desc-display').textContent = D.algoDesc;
+  document.getElementById('timeline-title-display').textContent = D.timelineTitle;
+  document.getElementById('timeline-desc-display').textContent = D.timelineDesc;
+  document.getElementById('footer-about-display').textContent = D.footerAbout;
+  document.getElementById('footer-name-display').textContent = D.siteName;
+  document.getElementById('footer-url-display').textContent = D.siteUrl;
+  document.getElementById('footer-year').textContent = new Date().getFullYear();
+  document.title = D.siteName + ' — Machine Learning Universe';
+
+  // Stats
+  document.getElementById('stats-bar').innerHTML = D.stats.map(s=>`
+    <div class="stat"><div class="stat-num">${s.num}</div><div class="stat-label">${s.label}</div></div>`).join('');
+
+  // Footer topics
+  document.getElementById('footer-topics-display').innerHTML = D.footerTopics.map(t=>`<li>${t}</li>`).join('');
+
+  // Concepts
+  document.getElementById('concepts-grid').innerHTML = D.concepts.map(c=>`
+    <div class="concept-card">
+      <div class="card-icon">${c.icon}</div>
+      <div class="card-tag">${c.tag}</div>
+      <h3 class="card-title">${c.title}</h3>
+      <p class="card-body">${c.body}</p>
+      ${c.formula?`<div class="card-formula">${c.formula}</div>`:''}
+    </div>`).join('');
+
+  // Algorithms
+  document.getElementById('algo-tbody').innerHTML = D.algorithms.map(a=>`
+    <tr>
+      <td>${a.name}</td>
+      <td><span class="pill pill-${a.color}">${a.cat}</span></td>
+      <td>${a.type}</td>
+      <td>${a.use}</td>
+      <td>${a.complexity}</td>
+    </tr>`).join('');
+
+  // Timeline
+  document.getElementById('timeline-list').innerHTML = D.timeline.map(t=>`
+    <div class="timeline-item">
+      <div class="timeline-dot">${t.icon}</div>
+      <div class="timeline-content">
+        <div class="timeline-year">${t.year}</div>
+        <div class="timeline-title">${t.title}</div>
+        <div class="timeline-body">${t.body}</div>
+      </div>
+    </div>`).join('');
+
+  reobserve();
+}
+
+// ─── INTERSECTION OBSERVER ────────────────────────────────────────────────────
+function reobserve() {
+  document.querySelectorAll('.fade-in').forEach(el=>el.classList.remove('visible'));
+  const obs = new IntersectionObserver(entries=>{entries.forEach(e=>{if(e.isIntersecting){e.target.classList.add('visible');obs.unobserve(e.target);}});},{threshold:0.1});
+  document.querySelectorAll('.fade-in').forEach(el=>obs.observe(el));
+}
+
+// ─── ADMIN ────────────────────────────────────────────────────────────────────
+function openAdmin() {
+  document.getElementById('admin-overlay').classList.add('open');
+  loadAdminForms();
+}
+function closeAdmin() { document.getElementById('admin-overlay').classList.remove('open'); }
+function closeAdminOnBg(e) { if(e.target===document.getElementById('admin-overlay')) closeAdmin(); }
+
+function switchTab(name) {
+  document.querySelectorAll('.admin-tab').forEach((t,i)=>{t.classList.toggle('active',['general','concepts','algorithms','timeline'][i]===name);});
+  document.querySelectorAll('.admin-section').forEach(s=>s.classList.remove('active'));
+  document.getElementById('tab-'+name).classList.add('active');
+}
+
+function loadAdminForms() {
+  document.getElementById('a-site-name').value = D.siteName;
+  document.getElementById('a-site-url').value = D.siteUrl;
+  document.getElementById('a-hero-badge').value = D.heroBadge;
+  document.getElementById('a-hero-l1').value = D.heroL1;
+  document.getElementById('a-hero-l2').value = D.heroL2;
+  document.getElementById('a-hero-l3').value = D.heroL3;
+  document.getElementById('a-hero-sub').value = D.heroSub;
+  document.getElementById('a-footer-about').value = D.footerAbout;
+  document.getElementById('a-footer-topics').value = D.footerTopics.join('\n');
+  document.getElementById('a-concepts-title').value = D.conceptsTitle;
+  document.getElementById('a-concepts-desc').value = D.conceptsDesc;
+  document.getElementById('a-algo-title').value = D.algoTitle;
+  document.getElementById('a-algo-desc').value = D.algoDesc;
+  document.getElementById('a-timeline-title').value = D.timelineTitle;
+  document.getElementById('a-timeline-desc').value = D.timelineDesc;
+  renderStatsEditor();
+  renderConceptList();
+  renderAlgoList();
+  renderTimelineEditorList();
+}
+
+// Stats editor
+function renderStatsEditor() {
+  document.getElementById('stats-editor').innerHTML = D.stats.map((s,i)=>`
+    <div style="display:grid;grid-template-columns:1fr 1fr auto;gap:0.5rem;align-items:center;margin-bottom:0.5rem;">
+      <input class="form-input" placeholder="Value" value="${s.num}" oninput="D.stats[${i}].num=this.value" style="font-size:0.82rem;padding:0.5rem 0.75rem;">
+      <input class="form-input" placeholder="Label" value="${s.label}" oninput="D.stats[${i}].label=this.value" style="font-size:0.82rem;padding:0.5rem 0.75rem;">
+      <button class="delete-btn" onclick="D.stats.splice(${i},1);renderStatsEditor();" style="padding:0.4rem 0.6rem;">✕</button>
+    </div>`).join('')
+    + `<button class="add-btn" onclick="D.stats.push({num:'0',label:'New Stat'});renderStatsEditor();" style="width:100%;justify-content:center;margin-top:0.5rem;">+ Add Stat</button>`;
+}
+
+// ─── GENERAL SAVE ─────────────────────────────────────────────────────────────
+function saveGeneral() {
+  D.siteName=document.getElementById('a-site-name').value;
+  D.siteUrl=document.getElementById('a-site-url').value;
+  D.heroBadge=document.getElementById('a-hero-badge').value;
+  D.heroL1=document.getElementById('a-hero-l1').value;
+  D.heroL2=document.getElementById('a-hero-l2').value;
+  D.heroL3=document.getElementById('a-hero-l3').value;
+  D.heroSub=document.getElementById('a-hero-sub').value;
+  D.footerAbout=document.getElementById('a-footer-about').value;
+  D.footerTopics=document.getElementById('a-footer-topics').value.split('\n').map(s=>s.trim()).filter(Boolean);
+  save(); render(); showToast('General settings saved!');
+}
+
+function saveSectionMeta(section) {
+  if(section==='concepts'){D.conceptsTitle=document.getElementById('a-concepts-title').value;D.conceptsDesc=document.getElementById('a-concepts-desc').value;}
+  if(section==='algo'){D.algoTitle=document.getElementById('a-algo-title').value;D.algoDesc=document.getElementById('a-algo-desc').value;}
+  if(section==='timeline'){D.timelineTitle=document.getElementById('a-timeline-title').value;D.timelineDesc=document.getElementById('a-timeline-desc').value;}
+  save(); render(); showToast('Section header saved!');
+}
+
+// ─── CONCEPTS CRUD ────────────────────────────────────────────────────────────
+function renderConceptList() {
+  document.getElementById('concept-list').innerHTML = D.concepts.map((c,i)=>`
+    <div class="card-list-item ${selectedConcept===i?'selected':''}" onclick="selectConcept(${i})">
+      <div class="card-list-title">${c.icon} ${c.title}</div>
+      <div class="card-list-sub">${c.tag}</div>
+    </div>`).join('');
+}
+function selectConcept(i) {
+  selectedConcept=i;
+  const c=D.concepts[i];
+  document.getElementById('ce-icon').value=c.icon;
+  document.getElementById('ce-tag').value=c.tag;
+  document.getElementById('ce-title').value=c.title;
+  document.getElementById('ce-body').value=c.body;
+  document.getElementById('ce-formula').value=c.formula||'';
+  document.getElementById('concept-editor').style.display='block';
+  renderConceptList();
+}
+function addConcept() {
+  D.concepts.push({icon:'⭐',tag:'Concept '+('0'+(D.concepts.length+1)).slice(-2),title:'New Concept',body:'Describe this ML concept here.',formula:''});
+  selectConcept(D.concepts.length-1); save(); render();
+}
+function saveConcept() {
+  if(selectedConcept<0) return;
+  D.concepts[selectedConcept]={
+    icon:document.getElementById('ce-icon').value||'⭐',
+    tag:document.getElementById('ce-tag').value,
+    title:document.getElementById('ce-title').value,
+    body:document.getElementById('ce-body').value,
+    formula:document.getElementById('ce-formula').value
+  };
+  save(); render(); renderConceptList(); showToast('Concept card saved!');
+}
+function deleteConcept() {
+  if(selectedConcept<0) return;
+  if(!confirm('Delete this concept card?')) return;
+  D.concepts.splice(selectedConcept,1);
+  selectedConcept=-1;
+  document.getElementById('concept-editor').style.display='none';
+  save(); render(); renderConceptList();
+}
+
+// ─── ALGORITHMS CRUD ──────────────────────────────────────────────────────────
+function renderAlgoList() {
+  document.getElementById('algo-list').innerHTML = D.algorithms.map((a,i)=>`
+    <div class="card-list-item ${selectedAlgo===i?'selected':''}" onclick="selectAlgo(${i})">
+      <div class="card-list-title">${a.name}</div>
+      <div class="card-list-sub">${a.type} · ${a.cat}</div>
+    </div>`).join('');
+}
+function selectAlgo(i) {
+  selectedAlgo=i;
+  const a=D.algorithms[i];
+  document.getElementById('ae-name').value=a.name;
+  document.getElementById('ae-cat').value=a.cat;
+  document.getElementById('ae-color').value=a.color;
+  document.getElementById('ae-type').value=a.type;
+  document.getElementById('ae-use').value=a.use;
+  document.getElementById('ae-complexity').value=a.complexity;
+  document.getElementById('algo-editor').style.display='block';
+  renderAlgoList();
+}
+function addAlgo() {
+  D.algorithms.push({name:'New Algorithm',cat:'Category',color:'blue',type:'Supervised',use:'Describe use case',complexity:'O(n)'});
+  selectAlgo(D.algorithms.length-1); save(); render();
+}
+function saveAlgo() {
+  if(selectedAlgo<0) return;
+  D.algorithms[selectedAlgo]={
+    name:document.getElementById('ae-name').value,
+    cat:document.getElementById('ae-cat').value,
+    color:document.getElementById('ae-color').value,
+    type:document.getElementById('ae-type').value,
+    use:document.getElementById('ae-use').value,
+    complexity:document.getElementById('ae-complexity').value
+  };
+  save(); render(); renderAlgoList(); showToast('Algorithm row saved!');
+}
+function deleteAlgo() {
+  if(selectedAlgo<0) return;
+  if(!confirm('Delete this algorithm?')) return;
+  D.algorithms.splice(selectedAlgo,1);
+  selectedAlgo=-1;
+  document.getElementById('algo-editor').style.display='none';
+  save(); render(); renderAlgoList();
+}
+
+// ─── TIMELINE CRUD ────────────────────────────────────────────────────────────
+function renderTimelineEditorList() {
+  document.getElementById('timeline-editor-list').innerHTML = D.timeline.map((t,i)=>`
+    <div class="card-list-item ${selectedTimeline===i?'selected':''}" onclick="selectTimeline(${i})">
+      <div class="card-list-title">${t.icon} ${t.title}</div>
+      <div class="card-list-sub">${t.year}</div>
+    </div>`).join('');
+}
+function selectTimeline(i) {
+  selectedTimeline=i;
+  const t=D.timeline[i];
+  document.getElementById('te-year').value=t.year;
+  document.getElementById('te-icon').value=t.icon;
+  document.getElementById('te-title').value=t.title;
+  document.getElementById('te-body').value=t.body;
+  document.getElementById('timeline-editor').style.display='block';
+  renderTimelineEditorList();
+}
+function addTimeline() {
+  D.timeline.push({year:new Date().getFullYear().toString(),icon:'📌',title:'New Event',body:'Describe this milestone.'});
+  selectTimeline(D.timeline.length-1); save(); render();
+}
+function saveTimeline() {
+  if(selectedTimeline<0) return;
+  D.timeline[selectedTimeline]={
+    year:document.getElementById('te-year').value,
+    icon:document.getElementById('te-icon').value||'📌',
+    title:document.getElementById('te-title').value,
+    body:document.getElementById('te-body').value
+  };
+  save(); render(); renderTimelineEditorList(); showToast('Timeline event saved!');
+}
+function deleteTimeline() {
+  if(selectedTimeline<0) return;
+  if(!confirm('Delete this event?')) return;
+  D.timeline.splice(selectedTimeline,1);
+  selectedTimeline=-1;
+  document.getElementById('timeline-editor').style.display='none';
+  save(); render(); renderTimelineEditorList();
+}
+
+// ─── CURSOR ───────────────────────────────────────────────────────────────────
+const cursor=document.getElementById('cursor'),ring=document.getElementById('cursor-ring');
+let mx=0,my=0,rx=0,ry=0;
+document.addEventListener('mousemove',e=>{mx=e.clientX;my=e.clientY;});
+(function animCursor(){cursor.style.left=mx+'px';cursor.style.top=my+'px';rx+=(mx-rx)*0.12;ry+=(my-ry)*0.12;ring.style.left=rx+'px';ring.style.top=ry+'px';requestAnimationFrame(animCursor);})();
+
+// ─── STAR CANVAS ──────────────────────────────────────────────────────────────
+const canvas=document.getElementById('bg-canvas'),ctx=canvas.getContext('2d');
+let stars=[];
+function resizeCanvas(){canvas.width=innerWidth;canvas.height=innerHeight;stars=Array.from({length:180},()=>({x:Math.random()*canvas.width,y:Math.random()*canvas.height,r:Math.random()*1.5+0.2,a:Math.random(),speed:Math.random()*0.003+0.001}));}
+(function drawStars(){ctx.clearRect(0,0,canvas.width,canvas.height);stars.forEach(s=>{s.a+=s.speed;if(s.a>1)s.a=0;ctx.beginPath();ctx.arc(s.x,s.y,s.r,0,Math.PI*2);ctx.fillStyle=`rgba(148,163,184,${Math.sin(s.a*Math.PI)*0.4})`;ctx.fill();});requestAnimationFrame(drawStars);})();
+resizeCanvas();window.addEventListener('resize',resizeCanvas);
+
+// ─── INIT ─────────────────────────────────────────────────────────────────────
+render();
+</script>
+</body>
+</html>
